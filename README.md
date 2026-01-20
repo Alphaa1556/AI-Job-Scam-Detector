@@ -13,6 +13,7 @@ We propose an AI-powered web application that analyzes job or internship offers 
 - Query-based AI explanations using Google Gemini
 - Offer letter analysis using Google Vision OCR
 - Firebase integration for storing scan results
+- Drag and Drop option
 
 ## Google Technologies Used
 - Google Gemini API (AI query answering)
