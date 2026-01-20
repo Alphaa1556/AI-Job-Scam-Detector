@@ -1,6 +1,18 @@
+import os
+from werkzeug.utils import secure_filename
+
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
+UPLOAD_FOLDER = "uploads"
+ALLOWED_EXTENSIONS = {"pdf", "png", "jpg", "jpeg"}
+
+app.config["UPLOAD_FOLDER"] = UPLOAD_FOLDER
+
+os.makedirs(app.config["UPLOAD_FOLDER"], exist_ok=True)
+def allowed_file(filename):
+    return "." in filename and filename.rsplit(".", 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 # ==============================
 # SCAM KEYWORDS WITH WEIGHTAGE
@@ -93,6 +105,33 @@ def analyze_offer():
         "risk_level": risk_level,
         "reasons": reasons
     })
+@app.route("/upload-offer", methods=["POST"])
+def upload_offer():
+
+    # 1. Check if file key exists
+    if "file" not in request.files:
+        return jsonify({"error": "No file part in request"}), 400
+
+    file = request.files["file"]
+
+    # 2. Check if filename is empty
+    if file.filename == "":
+        return jsonify({"error": "No file selected"}), 400
+
+    # 3. Validate file extension
+    if file and allowed_file(file.filename):
+        filename = secure_filename(file.filename)
+        file_path = os.path.join(app.config["UPLOAD_FOLDER"], filename)
+        file.save(file_path)
+
+        return jsonify({
+            "message": "File uploaded successfully",
+            "filename": filename,
+            "path": file_path
+        }), 200
+
+    return jsonify({"error": "Invalid file type"}), 400
+
 
 # ==============================
 # RUN SERVER
