@@ -30,7 +30,6 @@ We propose an AI-powered web application that analyzes job or internship offers 
 - Member 2: UI/UX Design (Figma/Canva)
 - Member 3: Backend Logic
 - Member 4: Backend + Google API Integration
-- You: Project Lead & Backend Integration
 
 ## Project Status
 This project is under active development as part of a hackathon submission (60% completion).
