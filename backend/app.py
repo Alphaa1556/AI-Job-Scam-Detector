@@ -1,6 +1,6 @@
 import os
+import pdfplumber
 from werkzeug.utils import secure_filename
-
 from flask import Flask, request, jsonify
 
 app = Flask(__name__)
@@ -65,13 +65,39 @@ SCAM_KEYWORDS = {
     "privacy reasons": 20,
     "our hr team": 15
 }
+def extract_text_from_file(file_path):
+    try:
+        extracted_text = ""
+
+        if file_path.lower().endswith(".pdf"):
+            with pdfplumber.open(file_path) as pdf:
+                for page in pdf.pages:
+                    text = page.extract_text()
+                    if text:
+                        extracted_text += text + "\n"
+
+        elif file_path.lower().endswith((".png", ".jpg", ".jpeg")):
+            extracted_text = "Text extraction from image will be handled using Google Vision API."
+
+        return extracted_text.strip()
+
+    except Exception as e:
+        return f"ERROR extracting text: {str(e)}"
+
 
 # ==============================
 # HOME ROUTE
 # ==============================
+import os
+from flask import send_from_directory
+
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+FRONTEND_DIR = os.path.join(BASE_DIR, "..", "frontend")
+
 @app.route("/")
 def home():
-    return "AI Job Scam Detector Backend Running"
+    return send_from_directory(FRONTEND_DIR, "upload.html")
+
 
 # ==============================
 # ANALYZE ROUTE

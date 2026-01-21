@@ -8,15 +8,35 @@
 
   <h2>Upload Offer Letter</h2>
 
-  <form 
-    action="http://127.0.0.1:5000/upload-offer"
-    method="POST"
-    enctype="multipart/form-data"
-  >
-    <input type="file" name="file" required />
-    <br><br>
-    <button type="submit">Upload & Analyze</button>
-  </form>
+  <form id="uploadForm">
+  <input type="file" id="fileInput" name="file" required />
+  <br><br>
+  <button type="submit">Upload & Analyze</button>
+</form>
+
+<pre id="result"></pre>
+
 
 </body>
 </html>
+<script>
+document.getElementById("uploadForm").addEventListener("submit", async function (e) {
+  e.preventDefault();
+
+  const fileInput = document.getElementById("fileInput");
+  const resultBox = document.getElementById("result");
+
+  const formData = new FormData();
+  formData.append("file", fileInput.files[0]);
+
+  resultBox.textContent = "Analyzing...";
+
+  const response = await fetch("http://127.0.0.1:5000/upload-offer", {
+    method: "POST",
+    body: formData
+  });
+
+  const data = await response.json();
+  resultBox.textContent = JSON.stringify(data, null, 2);
+});
+</script>
