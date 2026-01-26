@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>AI-Powered Job & Internship Scam Detector</title>
+
+<link href="https://fonts.googleapis.com/css2?family=VT323&family=Inter:wght@400;700;900&display=swap" rel="stylesheet">
+
+<style>
+:root{
+  --bg:#0b1020;
+  --card:#141a33;
+  --text:#eaf0ff;
+  --muted:#9aa3c7;
+  --accent:#7c5cff;
+  --safe:#22c55e;
+  --warn:#facc15;
+  --danger:#ff4d4d;
+}
+
+[data-theme="light"]{
+  --bg:#46464e;
+  --card:rgba(83, 74, 74, 0.92);
+  --text:#0b1020;
+  --muted:#2a47a9;
+  --accent:#6b66d8;
+}
+
+/* ===== BASE ===== */
+body{
+  margin:0;
+  min-height:100vh;
+  background:var(--bg);
+  color:var(--text);
+  font-family:Inter,system-ui;
+  overflow-x:hidden;
+}
+
+/* ===== BACKGROUND ===== */
+body::before{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:
+    radial-gradient(circle at center, rgba(124,92,255,.35), transparent 60%),
+    url("/static/background.png") center/cover no-repeat;
+  opacity:.45;
+  filter:brightness(.55) contrast(1.15);
+  z-index:-3;
+}
+[data-theme="light"] body::before{
+  opacity:.25;
+  filter:brightness(1.05);
+}
+
+/* ===== PIXEL GRAIN ===== */
+body::after{
+  content:"";
+  position:fixed;
+  inset:0;
+  background:repeating-linear-gradient(
+    rgba(255,255,255,.04) 0px,
+    rgba(255,255,255,.04) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  animation:grain 25s linear infinite;
+  z-index:-2;
+  pointer-events:none;
+}
+@keyframes grain{
+  from{background-position:0 0}
+  to{background-position:400px 900px}
+}
+
+/* ===== LAYOUT ===== */
+.container{max-width:1200px;margin:auto;padding:28px 20px 80px}
+.card{
+  background:rgba(18,22,45,.78);
+  border-radius:22px;
+  padding:26px;
+  backdrop-filter:blur(16px);
+  border:1px solid rgba(255,255,255,.08);
+}
+[data-theme="light"] .card{
+  background:rgba(255,255,255,.92);
+  border-color:rgba(0,0,0,.08);
+}
+
+/* ===== NAV ===== */
+.nav{
+  position:sticky;top:0;
+  background:rgba(10,15,30,.65);
+  backdrop-filter:blur(14px);
+}
+.nav-inner{
+  max-width:1200px;margin:auto;
+  padding:14px 20px;
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+/* ===== HERO ===== */
+.hero h1{
+  font-family:VT323;
+  font-size:48px;
+  letter-spacing:2px;
+  text-shadow:0 0 14px rgba(124,92,255,.9);
+}
+.hero p{color:var(--muted);margin-top:10px}
+
+/* ===== BUTTON ===== */
+.btn{
+  border:none;
+  padding:12px 18px;
+  border-radius:14px;
+  background:linear-gradient(135deg,#7c5cff,#22d3ee);
+  color:white;
+  font-weight:900;
+  cursor:pointer;
+  transition:.25s ease;
+}
+.btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 28px rgba(124,92,255,.6)
+}
+
+/* ===== UPLOAD ===== */
+.section{margin-top:44px}
+.drop{
+  border:2px dashed rgba(255,255,255,.25);
+  border-radius:18px;
+  padding:36px;
+  text-align:center;
+  cursor:pointer;
+}
+.drop:hover{
+  border-color:var(--accent);
+  background:rgba(124,92,255,.08)
+}
+
+.preview{margin-top:16px;display:none}
+.preview img,.preview iframe{
+  width:100%;height:260px;border-radius:14px;border:none
+}
+
+/* ===== LOADER ===== */
+.loader{
+  margin-top:22px;
+  display:none;
+  position:relative;
+}
+.loader.scanning::before{
+  content:"";
+  position:absolute;
+  left:0;right:0;
+  height:2px;
+  background:linear-gradient(90deg,transparent,#22d3ee,transparent);
+  animation:scan 1.6s infinite;
+}
+@keyframes scan{from{top:0}to{top:100%}}
+
+.step{
+  font-family:VT323;
+  font-size:18px;
+  opacity:.35;
+  margin-top:10px;
+}
+.step.active{
+  opacity:1;
+  color:#7cffd4;
+}
+
+/* ===== RESULT ===== */
+.result{margin-top:44px;display:none}
+
+.score-bar{
+  height:14px;border-radius:999px;
+  background:linear-gradient(90deg,#22c55e,#facc15,#ff4d4d);
+  overflow:hidden
+}
+.score-fill{
+  height:100%;width:0%;
+  background:rgba(0,0,0,.45);
+  transition:width .6s ease
+}
+
+.badge{
+  margin-top:14px;
+  display:inline-flex;
+  padding:10px 16px;
+  border-radius:999px;
+  font-weight:900;
+  background:rgba(255,77,77,.2);
+  color:#ff4d4d
+}
+
+.analysis-grid{
+  margin-top:22px;
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:20px
+}
+
+.flag{
+  display:flex;gap:14px;
+  padding:16px;border-radius:16px;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.icon{
+  width:34px;height:34px;
+  border-radius:10px;
+  display:grid;place-items:center;
+  background:rgba(255,255,255,.12);
+  font-weight:900
+}
+
+.footer{
+  margin-top:60px;
+  text-align:center;
+  font-size:12px;
+  color:var(--muted)
+}
+</style>
+</head>
+
+<body data-theme="dark">
+
+<div class="nav">
+  <div class="nav-inner">
+    <b>Scam Detector</b>
+    <button class="btn" onclick="toggleTheme()">🌗</button>
+  </div>
+</div>
+
+<div class="container">
+
+<div class="hero card">
+  <h1>AI Powered Job & Internship Scam Detector</h1>
+  <p>Upload an offer letter and get an instant risk analysis with clear red flags.</p>
+  <button class="btn" onclick="scrollToUpload()">Start Scan</button>
+</div>
+
+<div class="section card" id="upload">
+  <h2>Upload Offer Letter</h2>
+  <div class="drop" id="dropArea" onclick="fileInput.click()">
+    📄 Drag & drop PDF or image here
+    <div id="fileName" style="margin-top:10px;color:var(--accent)"></div>
+  </div>
+  <input type="file" id="fileInput" accept=".pdf,image/*" hidden>
+
+  <div class="preview" id="preview"></div>
+  <button class="btn" onclick="startScan()">Scan Offer</button>
+
+  <div class="loader" id="loader">
+    <div class="step">🔍 Extracting text</div>
+    <div class="step">🧠 Language analysis</div>
+    <div class="step">🏢 Company verification</div>
+    <div class="step">🔗 Online presence check</div>
+  </div>
+</div>
+
+<!-- ===== RESULT ===== -->
+<div class="result card" id="result">
+  <h2>Detection Result</h2>
+
+  <div class="score-bar">
+    <div class="score-fill" id="scoreFill"></div>
+  </div>
+
+  <div class="badge">🚨 High Risk</div>
+
+  <div class="analysis-grid">
+    <div class="card">
+      <h3>📌 Summary</h3>
+      <p>
+        Multiple scam indicators detected. Do not pay money or share sensitive documents.
+        Verify the company using official channels.
+      </p>
+    </div>
+
+    <div class="card">
+      <h3>🚩 Red Flags Detected</h3>
+
+      <div class="flag"><div class="icon">!</div>Fee Mentioned</div>
+      <div class="flag"><div class="icon">!</div>Urgency Pressure</div>
+      <div class="flag"><div class="icon">!</div>No Interview</div>
+      <div class="flag"><div class="icon">!</div>Off-platform Contact</div>
+    </div>
+  </div>
+
+  <div style="margin-top:24px;display:flex;gap:12px;flex-wrap:wrap">
+    <button class="btn" onclick="rescan()">🔁 Rescan</button>
+    <button class="btn" onclick="downloadReport()">⬇️ Download Report</button>
+  </div>
+</div>
+
+<div class="footer">Because Scams Don't Look Like Scams</div>
+
+</div>
+
+<script>
+const fileInput = document.getElementById("fileInput");
+const dropArea = document.getElementById("dropArea");
+const loader = document.getElementById("loader");
+
+const resultBox = document.getElementById("result");
+const scoreFill = document.getElementById("scoreFill");
+const badge = document.querySelector(".badge");
+const flagsContainer = document.querySelector(".analysis-grid .card:last-child");
+const summaryText = document.querySelector(".analysis-grid .card p");
+
+let selectedFile = null;
+let lastSummary = "";
+let lastFlags = [];
+
+/* FILE SELECT */
+fileInput.addEventListener("change", () => {
+  selectedFile = fileInput.files[0];
+  if (!selectedFile) return;
+
+  document.getElementById("fileName").innerText = selectedFile.name;
+
+  const preview = document.getElementById("preview");
+  preview.style.display = "block";
+  preview.innerHTML = selectedFile.type.includes("image")
+    ? `<img src="${URL.createObjectURL(selectedFile)}">`
+    : `<iframe src="${URL.createObjectURL(selectedFile)}"></iframe>`;
+});
+
+/* DRAG & DROP */
+dropArea.addEventListener("dragover", e => e.preventDefault());
+dropArea.addEventListener("drop", e => {
+  e.preventDefault();
+  fileInput.files = e.dataTransfer.files;
+  fileInput.dispatchEvent(new Event("change"));
+});
+
+/* THEME */
+function toggleTheme(){
+  document.body.dataset.theme =
+    document.body.dataset.theme === "dark" ? "light" : "dark";
+}
+
+function scrollToUpload(){
+  document.getElementById("upload").scrollIntoView({behavior:"smooth"});
+}
+
+/* REAL BACKEND SCAN */
+async function startScan(){
+  if(!selectedFile){
+    alert("Upload a file first");
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("file", selectedFile);
+
+  const steps = document.querySelectorAll(".step");
+  loader.style.display = "block";
+  loader.classList.add("scanning");
+
+  steps.forEach(s => s.classList.remove("active"));
+  steps.forEach((s,i)=>setTimeout(()=>s.classList.add("active"), i*700));
+
+  try {
+    const response = await fetch("/analyze", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await response.json();
+
+    loader.classList.remove("scanning");
+    loader.style.display = "none";
+    resultBox.style.display = "block";
+
+    /* SCORE */
+    const score = data.scam_score || 0;
+    scoreFill.style.width = score + "%";
+
+    /* VERDICT */
+    badge.innerText = data.verdict;
+
+    if (score >= 70) {
+      badge.style.background = "rgba(255,77,77,.2)";
+      badge.style.color = "#ff4d4d";
+    } else if (score >= 40) {
+      badge.style.background = "rgba(250,204,21,.2)";
+      badge.style.color = "#facc15";
+    } else {
+      badge.style.background = "rgba(34,197,94,.2)";
+      badge.style.color = "#22c55e";
+    }
+
+    /* ✅ AI-STYLE SUMMARY (FIXED) */
+    const reasons = data.reasons || [];
+    lastFlags = reasons;
+
+    if (score >= 70) {
+      lastSummary =
+        "This offer letter shows multiple high-risk scam indicators. " +
+        "The analysis detected strong warning signs such as " +
+        reasons.slice(0,2).join(", ") +
+        ". It is strongly advised not to pay money or share personal details.";
+    } else if (score >= 40) {
+      lastSummary =
+        "This offer letter appears suspicious based on several risk patterns. " +
+        "Indicators like " +
+        reasons.slice(0,2).join(", ") +
+        " suggest the opportunity should be verified carefully before proceeding.";
+    } else {
+      lastSummary =
+        "This offer letter appears relatively safe with no major scam indicators detected. " +
+        "However, candidates should still verify the company through official channels.";
+    }
+
+    summaryText.innerText = lastSummary;
+
+    /* RED FLAGS */
+    flagsContainer.innerHTML = `<h3>🚩 Red Flags Detected</h3>`;
+    if (reasons.length > 0) {
+      reasons.forEach(reason => {
+        flagsContainer.innerHTML += `
+          <div class="flag">
+            <div class="icon">!</div>
+            ${reason}
+          </div>`;
+      });
+    } else {
+      flagsContainer.innerHTML += `
+        <div class="flag">
+          <div class="icon">✓</div>
+          No major red flags found
+        </div>`;
+    }
+
+    resultBox.scrollIntoView({behavior:"smooth"});
+
+  } catch (err) {
+    loader.style.display = "none";
+    alert("Backend not reachable");
+  }
+}
+
+/* RESCAN */
+function rescan(){
+  selectedFile = null;
+  lastSummary = "";
+  lastFlags = [];
+  fileInput.value = "";
+  document.getElementById("fileName").innerText = "";
+  document.getElementById("preview").style.display = "none";
+  document.getElementById("preview").innerHTML = "";
+  scoreFill.style.width = "0%";
+  resultBox.style.display = "none";
+  scrollToUpload();
+}
+
+/* ✅ CLEAN REPORT DOWNLOAD */
+function downloadReport(){
+  const content =
+`AI Job & Internship Scam Detection Report
+========================================
+
+Verdict:
+${badge.innerText}
+
+Summary:
+${lastSummary}
+
+Red Flags Detected:
+${lastFlags.length ? lastFlags.map(r => "- " + r).join("\n") : "None"}
+
+Generated by AI Scam Detector
+`;
+
+  const blob = new Blob([content], { type:"text/plain" });
+  const link = document.createElement("a");
+  link.href = URL.createObjectURL(blob);
+  link.download = "Scam_Analysis_Report.txt";
+  link.click();
+}
+</script>
